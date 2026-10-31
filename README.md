@@ -46,7 +46,7 @@ The short version:
 2. Preferably sign off your commits (`git commit --signoff`) to certify you have the right to contribute the code.
 3. Open a pull request.
 
-Full details, including the Developer Certificate of Origin and what makes a good example submission, are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Full details, including what makes a good example submission, are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
