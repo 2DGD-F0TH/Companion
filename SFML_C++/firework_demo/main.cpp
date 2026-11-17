@@ -19,6 +19,9 @@ std::vector<sf::Image*>* images;
 std::list<Star*>* starList;
 }  // namespace game_globals
 
+/**
+ * @brief Processes the events in the input-update-draw cycle. Very close to the "input" stage
+ */
 void process_events() {
     while (const std::optional event = game_globals::rWindow.pollEvent()) {
         // Window closing event
@@ -26,13 +29,10 @@ void process_events() {
             game_globals::rWindow.close();
         }
         // Left click (fire a rocket)
-        if (const auto* mouseButton =
-                event->getIf<sf::Event::MouseButtonReleased>()) {
-            game_globals::fws.push_back(new Firework(
-                sf::Vector2f((int)(game_globals::rWindow.getSize().x / 2),
-                             (int)(game_globals::rWindow.getSize().y)),
-                sf::Vector2f(mouseButton->position.x, mouseButton->position.y),
-                game_globals::images));
+        if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonReleased>()) {
+            game_globals::fws.push_back(
+                new Firework(sf::Vector2f((int)(game_globals::rWindow.getSize().x / 2), (int)(game_globals::rWindow.getSize().y)),
+                             sf::Vector2f(mouseButton->position.x, mouseButton->position.y), game_globals::images));
         }
         // M keyboard button (mute music)
         if (const auto* keyreleased = event->getIf<sf::Event::KeyReleased>()) {
@@ -49,18 +49,18 @@ void process_events() {
     }
 }
 
+/**
+ * @brief Does some variable initialization. Consider this boilerplate.
+ */
 void initialize_game() {
     // Initialize the window
-    game_globals::rWindow =
-        sf::RenderWindow(sf::VideoMode({1280, 960}), "Fireworks!");
+    game_globals::rWindow = sf::RenderWindow(sf::VideoMode({1280, 960}), "Fireworks!");
     // Initialize the dynamic starfield background
     game_globals::starList = new std::list<Star*>();
     for (int i = 0; i < 1000; ++i) {
-        game_globals::starList->push_back(new Star(
-            sf::Vector2f(
-                (rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().x,
-                (rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().y),
-            (rand() / (float)RAND_MAX) * 1.0f + 1.0));
+        game_globals::starList->push_back(new Star(sf::Vector2f((rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().x,
+                                                                (rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().y),
+                                                   (rand() / (float)RAND_MAX) * 1.0f + 1.0));
     }
     // Initialize the game music
     if (!game_globals::music.openFromFile("./resources/music/track.ogg")) {
@@ -84,6 +84,11 @@ void initialize_game() {
     game_globals::rWindow.setFramerateLimit(60);
 }
 
+/**
+ * @brief Update the game state.
+ *
+ * @param tElapsedTime How much time has passed since last frame
+ */
 void update_state(sf::Time tElapsedTime) {
     for (auto fw : game_globals::fws) {
         fw->update(tElapsedTime);
@@ -93,6 +98,9 @@ void update_state(sf::Time tElapsedTime) {
     }
 }
 
+/**
+ * @brief Draw stage of the "input-update-draw" pipeline.
+ */
 void draw() {
     game_globals::rWindow.clear(sf::Color::Black);
     for (auto fw : game_globals::fws) {
@@ -106,9 +114,8 @@ void draw() {
 
     // Clean up extinguished fireworks
     if (game_globals::fws.size() > 0) {
-        auto it = std::remove_if(
-            game_globals::fws.begin(), game_globals::fws.end(),
-            [](const Firework* fw) -> bool { return fw->isExtinguished(); });
+        auto it = std::remove_if(game_globals::fws.begin(), game_globals::fws.end(),
+                                 [](const Firework* fw) -> bool { return fw->isExtinguished(); });
         if (it != game_globals::fws.end()) {
             game_globals::fws.erase(it);
         }
@@ -117,13 +124,14 @@ void draw() {
 
 int main() {
     initialize_game();
+    // While the game is running...
     while (game_globals::rWindow.isOpen()) {
         sf::Time tElapsedTime = game_globals::cClock.restart();
-        // Event Polling
+        // Process Inputs
         process_events();
-        // Updating
+        // Update the internal state
         update_state(tElapsedTime);
-        // Window Drawing
+        // Draw to screen
         draw();
     }
     return 0;
