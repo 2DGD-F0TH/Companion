@@ -5,8 +5,6 @@ This is a revised version of [Fireworks Demo](https://github.com/Penaz91/firewor
 
 The original version is still available under the "Unlicense" license at the link above.
 
-[[__TOC__]]
-
 Game Loop
 ----------
 
