@@ -1,24 +1,48 @@
 Fireworks Demo
 -----------------
 
-**WARNING:** This readme is slated for rewriting as a part of the "2D Game Development: The companion repository" project.
+This is a revised version of [Fireworks Demo](https://github.com/Penaz91/firework_demo) rewritten for the "2D Game Development: From Zero To Hero Companion" repository project.
 
-Small Demo I made for a friend that displays a star field with 1000 stars, all generated with circles.
+The original version is still available under the "Unlicense" license at the link above.
+
+[[__TOC__]]
+
+Game Loop
+----------
 
 Clicking somewhere on the window will shoot a firework on that place, using ease-out functions.
 
-When the firework explodes, particles will be emitted to match a certain shape.
+When the firework explodes, particles will be emitted to match a certain shape, randomly chosen from the `resources/patterns` directory.
 
 Patterns
 ---------
 
 Shapes can be edited and added in the `resources/patterns` directory.
 
-Each black pixel represents a random color particle. Transparent pixels won't create particles. Colored pixels will have their color taken and used to create the particles.
+Each black pixel represents a random color particle. Transparent pixels won't create particles. Colored pixels will have their color taken as-is and used to create the particles.
 
 Building the project
 ---------------------
 
-You will need the latest version of SFML and a compiler that supports C++17's `<filesystem>`.
+Dependencies:
 
-The project includes a makefile that allows to build the project by just using the `make` command.
+- A compiler that supports C++17's `<filesystem>` (GCC 16 or newer should suffice);
+- SFML version 3.0 or higher (might not work with a future "SFML 4" version, due to API breakage).
+
+To build the project, just open a terminal on the root of the project and type
+
+```.sh
+make
+```
+
+A new file called `main.bin` will appear, you may need to give it execution permissions using
+
+```.sh
+chmod +x ./main.bin
+```
+
+After that, you can run the demo by just typing
+
+```.sh
+./main.bin
+```
