@@ -112,9 +112,9 @@ bool Firework::isExtinguished() const {
             for (auto item = particles.begin();
                  bExtinguished && item != particles.end(); item++) {
                 /*
-                 * Extinguished when ALL particles are extinguished
-                 * means NOT extinguished when there is at least one particle
-                 * alive
+                 * "Extinguished when ALL particles are extinguished"
+                 * means "NOT extinguished when there is at least one particle
+                 * alive"
                  */
                 bExtinguished &= ((*item)->bExtinguished);
             }

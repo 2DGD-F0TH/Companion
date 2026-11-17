@@ -9,96 +9,122 @@
 
 namespace fs = std::filesystem;
 
-int main() {
-    sf::RenderWindow rWindow(sf::VideoMode({1280, 960}), "Fireworks!");
-    sf::Clock cClock;
-    std::list<Firework*> fws;
-    std::vector<sf::Image*>* images = new std::vector<sf::Image*>();
-    sf::Music music;
-    std::list<Star*>* starList = new std::list<Star*>();
-    for (int i = 0; i < 1000; ++i) {
-        starList->push_back(new Star(
-            sf::Vector2f((rand() / (float)RAND_MAX) * rWindow.getSize().x,
-                         (rand() / (float)RAND_MAX) * rWindow.getSize().y),
-            (rand() / (float)RAND_MAX) * 1.0f + 1.0));
-    }
-    bool music_playing = false;
-    if (!music.openFromFile("./resources/music/track.ogg")) {
-        std::cout << "Error while loading song" << std::endl;
-    }
-    // Getting images
-    std::string path = "./resources/patterns/";
-    for (auto p : fs::directory_iterator(path)) {
-        // std::cout << p << std::endl;
-        sf::Image* tmp = new sf::Image();
-        if (tmp->loadFromFile(p.path())) {
-            images->push_back(tmp);
+namespace game_globals {
+sf::RenderWindow rWindow;
+sf::Clock cClock;
+bool music_playing = false;
+sf::Music music;
+std::list<Firework*> fws;
+std::vector<sf::Image*>* images;
+std::list<Star*>* starList;
+}  // namespace game_globals
+
+void process_events() {
+    while (const std::optional event = game_globals::rWindow.pollEvent()) {
+        // Window closing event
+        if (event->is<sf::Event::Closed>()) {
+            game_globals::rWindow.close();
         }
-    }
-    rWindow.setFramerateLimit(60);
-    // particle part = particle(sf::Vector2f(400,200), sf::Vector2f(600,300));
-    music.play();
-    music_playing = true;
-    while (rWindow.isOpen()) {
-        sf::Time tElapsedTime = cClock.restart();
-        // Event Polling
-        while (const std::optional event = rWindow.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                rWindow.close();
-            }
-            if (const auto* mouseButton =
-                    event->getIf<sf::Event::MouseButtonReleased>()) {
-                fws.push_back(
-                    new Firework(sf::Vector2f((int)(rWindow.getSize().x / 2),
-                                              (int)(rWindow.getSize().y)),
-                                 sf::Vector2f(mouseButton->position.x,
-                                              mouseButton->position.y),
-                                 images));
-            }
-            if (const auto* keyreleased =
-                    event->getIf<sf::Event::KeyReleased>()) {
-                if (keyreleased->code == sf::Keyboard::Key::M) {
-                    if (music_playing) {
-                        music.stop();
-                        music_playing = false;
-                    } else {
-                        music_playing = true;
-                        music.play();
-                    }
+        // Left click (fire a rocket)
+        if (const auto* mouseButton =
+                event->getIf<sf::Event::MouseButtonReleased>()) {
+            game_globals::fws.push_back(new Firework(
+                sf::Vector2f((int)(game_globals::rWindow.getSize().x / 2),
+                             (int)(game_globals::rWindow.getSize().y)),
+                sf::Vector2f(mouseButton->position.x, mouseButton->position.y),
+                game_globals::images));
+        }
+        // M keyboard button (mute music)
+        if (const auto* keyreleased = event->getIf<sf::Event::KeyReleased>()) {
+            if (keyreleased->code == sf::Keyboard::Key::M) {
+                if (game_globals::music_playing) {
+                    game_globals::music.stop();
+                    game_globals::music_playing = false;
+                } else {
+                    game_globals::music_playing = true;
+                    game_globals::music.play();
                 }
             }
         }
+    }
+}
 
+void initialize_game() {
+    // Initialize the window
+    game_globals::rWindow =
+        sf::RenderWindow(sf::VideoMode({1280, 960}), "Fireworks!");
+    // Initialize the dynamic starfield background
+    game_globals::starList = new std::list<Star*>();
+    for (int i = 0; i < 1000; ++i) {
+        game_globals::starList->push_back(new Star(
+            sf::Vector2f(
+                (rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().x,
+                (rand() / (float)RAND_MAX) * game_globals::rWindow.getSize().y),
+            (rand() / (float)RAND_MAX) * 1.0f + 1.0));
+    }
+    // Initialize the game music
+    if (!game_globals::music.openFromFile("./resources/music/track.ogg")) {
+        std::cout << "Error while loading song" << std::endl;
+        game_globals::music_playing = false;
+    } else {
+        game_globals::music_playing = true;
+    }
+    if (game_globals::music_playing) {
+        game_globals::music.play();
+    }
+    // Getting patterns from the images
+    game_globals::images = new std::vector<sf::Image*>();
+    std::string path = "./resources/patterns/";
+    for (auto p : fs::directory_iterator(path)) {
+        sf::Image* tmp = new sf::Image();
+        if (tmp->loadFromFile(p.path())) {
+            game_globals::images->push_back(tmp);
+        }
+    }
+    game_globals::rWindow.setFramerateLimit(60);
+}
+
+void update_state(sf::Time tElapsedTime) {
+    for (auto fw : game_globals::fws) {
+        fw->update(tElapsedTime);
+    }
+    for (auto s : *game_globals::starList) {
+        s->update(tElapsedTime);
+    }
+}
+
+void draw() {
+    game_globals::rWindow.clear(sf::Color::Black);
+    for (auto fw : game_globals::fws) {
+        game_globals::rWindow.draw(*fw);
+    }
+    for (auto s : *game_globals::starList) {
+        game_globals::rWindow.draw(*s);
+    }
+    // game_globals::rWindow.draw(part);
+    game_globals::rWindow.display();
+
+    // Clean up extinguished fireworks
+    if (game_globals::fws.size() > 0) {
+        auto it = std::remove_if(
+            game_globals::fws.begin(), game_globals::fws.end(),
+            [](const Firework* fw) -> bool { return fw->isExtinguished(); });
+        if (it != game_globals::fws.end()) {
+            game_globals::fws.erase(it);
+        }
+    }
+}
+
+int main() {
+    initialize_game();
+    while (game_globals::rWindow.isOpen()) {
+        sf::Time tElapsedTime = game_globals::cClock.restart();
+        // Event Polling
+        process_events();
         // Updating
-        for (auto fw : fws) {
-            fw->update(tElapsedTime);
-        }
-        for (auto s : *starList) {
-            s->update(tElapsedTime);
-        }
-        // part.update(tElapsedTime);
-
+        update_state(tElapsedTime);
         // Window Drawing
-        rWindow.clear(sf::Color::Black);
-        for (auto fw : fws) {
-            rWindow.draw(*fw);
-        }
-        for (auto s : *starList) {
-            rWindow.draw(*s);
-        }
-        // rWindow.draw(part);
-        rWindow.display();
-
-        // Clean up extinguished fireworks
-        if (fws.size() > 0) {
-            auto it = std::remove_if(fws.begin(), fws.end(),
-                                     [](const Firework* fw) -> bool {
-                                         return fw->isExtinguished();
-                                     });
-            if (it != fws.end()) {
-                fws.erase(it);
-            }
-        }
+        draw();
     }
     return 0;
 }
